@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+
+<title>WebSocket Test</title>
+<style>
+    body { margin: 0; padding: 0; }
+    canvas { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+             margin: 0; padding: 0; border: 1px solid silver; }
+</style>
+<script language="javascript" type="text/javascript">
+
+loaded = {};
+keyCodes = {"Up": "ArrowUp", "Down": "ArrowDown", "Left": "ArrowLeft", "Right": "ArrowRight",
+            " ": "Spacebar", "Space": "Spacebar", "Esc": "Escape", "Del": "Delete"}
+mouseCodes = ["LeftButton", "MiddleButton", "RightButton"];
+
+window.addEventListener("load", () => {
+    canvas = document.getElementById("g2d-canvas");
+    ctx = canvas.getContext("2d");
+    ctx.strokeStyle = `rgb(127, 127, 127)`;
+    ctx.fillStyle = `(127, 127, 127)`;
+    websocket = new WebSocket("ws://localhost:7574/");
+    websocket.onopen = (evt) => { };
+    websocket.onclose = (evt) => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        open("about:blank", "_self").close();
+    };
+    websocket.onmessage = (evt) => { eval(evt.data); };
+    websocket.onerror = (evt) => { websocket.close(); };
+    document.onfocus = (evt) => { };
+    document.onkeydown = (evt) => {
+        if (evt.repeat) return;
+        var k = keyCodes[evt.key] || evt.key;
+        websocket.send("keydown " + k);
+    };
+    document.onkeyup = (evt) => {
+        var k = keyCodes[evt.key] || evt.key;
+        websocket.send("keyup " + k);
+    };
+    canvas.onmousemove = (evt) => {
+        var rect = canvas.getBoundingClientRect();
+        var x = Math.round(evt.clientX - rect.left);
+        var y = Math.round(evt.clientY - rect.top);
+        websocket.send("mousemove " + x + " " + y);
+    };
+    canvas.onmousedown = (evt) => {
+        websocket.send("keydown " + mouseCodes[Math.min(evt.button, 2)]);
+    };
+    canvas.onmouseup = (evt) => {
+        websocket.send("keyup " + mouseCodes[Math.min(evt.button, 2)]);
+    };
+});
+
+function loadElement(tag, src) {
+    var elem = loaded[src];
+    if (elem) return elem;
+    elem = document.createElement(tag);
+    elem.src = src;
+    elem.onerror = () => {
+        if (!elem.src.startsWith("https://raw.github")) {
+            elem.src = "https://raw.githubusercontent.com/tomamic/fondinfo/master/examples/" + src;
+        }
+    }
+    loaded[src] = elem;
+    return elem;
+}
+</script>
+</head>
+<body><canvas id="g2d-canvas" width="500" height="500"></canvas></body>
+</html>
